@@ -20,7 +20,7 @@
 | ชื่อ-นามสกุล | รหัสนักศึกษา | GitHub | อีเมลที่ใช้ commit | บทบาท |
 |---|---|---|---|---|
 | พิชฌ์ สินธรสวัสดิ์ | 67543210061-7 | ItsPitxh | pitched.10121@gmail.com | BE + DevOps |
-| <วรสิทธิ์ บุญยปรีดี> | <68543210017-8> | <ThunderXD> | < worasit.b2547@gmail.com> | <FE + DevOps> |
+| วรสิทธิ์ บุญยปรีดี | 68543210017-8 | ThunderXD |  worasit.b2547@gmail.com | FE + DevOps |
 
 - บทบาท — ทีมคู่: `fe` · `be+devops` · ทีม 3 คน: `fe` · `be` · `devops` (มีได้ 1 ทีมต่อ Section · เพิ่มแถวที่ 3)
 - `GitHub` ไม่ต้องมี `@` · ตรวจอีเมลด้วย `git config user.email` ในเครื่องของตัวเอง
