@@ -10,7 +10,7 @@
     "start": "npm start --prefix api",
     "test": "npm test --prefix api && npm test --prefix frontend",
     "coverage": "npm run coverage --prefix api",
-    "check": "node --disable-warning=ExperimentalWarning check-week13.mjs"
+    "check": "node --disable-warning=ExperimentalWarning check-project.mjs"
   },
   "devDependencies": {
     "supertest": "^7.2.2"
