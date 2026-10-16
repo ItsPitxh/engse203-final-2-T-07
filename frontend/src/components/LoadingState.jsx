@@ -3,3 +3,6 @@ function LoadingState({ message = 'กำลังโหลดข้อมูล
 }
 
 export default LoadingState;
+export default function LoadingState() {
+  return <p>กำลังโหลด…</p>;
+}
