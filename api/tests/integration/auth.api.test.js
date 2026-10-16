@@ -3,13 +3,14 @@ import request from 'supertest';
 import { createApp } from '../../src/app.js';
 import { loadSeed } from '../../src/services/requestService.js';
 import { STAFF, loginAsStaff, tokenFor } from '../helpers/auth.js';
+import { resetLoginLimiter } from '../../src/routes/authRoutes.js';
 
-/**
- * Week 13 — เข้าสู่ระบบและสิทธิ์
- * test 3 ข้อแรกให้มาแล้ว — จะ fail จนกว่าจะทำ CP50–CP51 เสร็จ (เขียน test ก่อน แล้วทำให้ผ่าน)
- */
+/** Week 13 — เข้าสู่ระบบและสิทธิ์ */
 const app = createApp();
-beforeEach(async () => { await loadSeed(); });
+beforeEach(async () => {
+  await loadSeed();
+  resetLoginLimiter?.();
+});
 
 describe('POST /api/auth/login', () => {
   test('อีเมลและรหัสผ่านถูก → 200 พร้อม token', async () => {
@@ -21,8 +22,21 @@ describe('POST /api/auth/login', () => {
     const r = await request(app).post('/api/auth/login').send({ ...STAFF, password: 'nope1234' });
     expect(r.status).toBe(401);
   });
-
-  // 🏫 TODO W13-LOGIN (CP50): อีเมลที่ไม่มี ต้องได้ข้อความ error เดียวกับรหัสผ่านผิด
+  test('อีเมลที่ไม่มีในระบบ → 401 ข้อความเดียวกับรหัสผ่านผิด (กัน user enumeration)', async () => {
+    const miss = await request(app).post('/api/auth/login').send({ email: 'ghost@rmutl.ac.th', password: 'anything1234' });
+    const wrong = await request(app).post('/api/auth/login').send({ ...STAFF, password: 'wrong-pass-1' });
+    expect(miss.status).toBe(401);
+    expect(wrong.status).toBe(401);
+    expect(miss.body.error).toBe(wrong.body.error);
+  });
+  test('ผู้แจ้งทั่วไป (role != staff) → 401', async () => {
+    const r = await request(app).post('/api/auth/login').send({ email: 'somchai@rmutl.ac.th', password: 'anything1234' });
+    expect(r.status).toBe(401);
+  });
+  test('body ไม่ครบ → 400', async () => {
+    const r = await request(app).post('/api/auth/login').send({ email: 'bad' });
+    expect(r.status).toBe(400);
+  });
 });
 
 describe('สิทธิ์ของ PUT / DELETE', () => {
@@ -30,11 +44,25 @@ describe('สิทธิ์ของ PUT / DELETE', () => {
     const r = await request(app).put('/api/requests/REQ-001').send({ status: 'completed' });
     expect(r.status).toBe(401);
   });
-
-  // 🏫 TODO W13-AUTH (CP51): เพิ่ม
-  //   - token ที่ไม่ใช่เจ้าหน้าที่ → 403      ใช้ tokenFor('requester')
-  //   - token ปลอม (secret อื่น) → 401        ใช้ tokenFor('staff', 'not-the-real-secret')
-  //   - เจ้าหน้าที่ → PUT 200 และ DELETE 204  ใช้ await loginAsStaff(app)
-  //   ⚠ หลังผูก authenticate แล้ว test ของ PUT/DELETE ใน requests.api.test.js จะพัง (401)
-  //     — นั่นคือสัญญาณว่า requirement เปลี่ยน: แก้ test ให้เข้าสู่ระบบก่อน
+  test('token ที่ไม่ใช่เจ้าหน้าที่ (role=requester) → 403', async () => {
+    const token = tokenFor('requester');
+    const r = await request(app).put('/api/requests/REQ-001')
+      .set('Authorization', `Bearer ${token}`).send({ status: 'completed' });
+    expect(r.status).toBe(403);
+  });
+  test('token ปลอม (secret อื่น) → 401', async () => {
+    const token = tokenFor('staff', 'not-the-real-secret');
+    const r = await request(app).put('/api/requests/REQ-001')
+      .set('Authorization', `Bearer ${token}`).send({ status: 'completed' });
+    expect(r.status).toBe(401);
+  });
+  test('เจ้าหน้าที่: PUT → 200 และ DELETE → 204', async () => {
+    const token = await loginAsStaff(app);
+    const put = await request(app).put('/api/requests/REQ-001')
+      .set('Authorization', `Bearer ${token}`).send({ status: 'in-progress' });
+    expect(put.status).toBe(200);
+    const del = await request(app).delete('/api/requests/REQ-003')
+      .set('Authorization', `Bearer ${token}`);
+    expect(del.status).toBe(204);
+  });
 });

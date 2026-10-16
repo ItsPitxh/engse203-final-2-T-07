@@ -11,18 +11,23 @@
 
 ## M1-C1 · คำสั่งคัดลอก
 
-```bash
+> **เครื่องนี้ (Mac · sendnudes · zsh)** · path จริงที่ใช้ได้แน่:
+> - repo ทีม: `~/engse203-final-2-T-07` ✓
+> - engse203-lab (course): `~/class/engse203-lab/` ✓
+> - port repo: `~/class/port/` · ⚠ `labs/week-13/source` บน `main` ถูก remove ไปเพื่อ re-import · โค้ดเต็มอยู่ที่ branch `lab/week-13`
+> - ใช้ engse203-lab's starter (code เต็ม · ตรวจแล้ว 0 TODO throws)
+
+```zsh
 cd ~/engse203-final-2-T-07
 
-# ① เอาโค้ด LAB 13 มา (ไม่เอา node_modules · *.db · .env)
+# ① เอาโค้ด LAB 13 มา (จาก engse203-lab's starter — code เต็มแล้ว · ไม่ต้องสลับ branch port)
 rsync -a --exclude node_modules --exclude '*.db' --exclude .env \
-  ~/class/port/labs/week-13/source/ ./
+  ~/class/engse203-lab/labs/week-13-quality-security/lab13/starter/ ./
 
-# ② วาง kit (ไม่ทับ TEAM.md)
+# ② วาง kit (ไม่ทับ TEAM.md · BUILD.md · PLAN.md · STEPS.md ที่กรอกแล้ว)
 cp -rn ~/class/engse203-lab/labs/final-term-project/kit/. ./
 
-# ⚠ -n ไม่ทับ .github/workflows/check.yml ของ LAB 13 (ชื่อ "Week 12 Tests")
-#   บังคับใช้ของ kit แทน (ชื่อ "CI" · มี build สำหรับทีม 3 คน)
+# ⚠ -n ไม่ทับ .github/workflows/check.yml ของ LAB 13 — บังคับใช้ของ kit แทน
 cp -f ~/class/engse203-lab/labs/final-term-project/kit/.github/workflows/check.yml \
       .github/workflows/check.yml
 
@@ -31,16 +36,37 @@ rm -f BUG_REPORTS.md DEMO.md DATABASE_CHOICES.md TEST_CASES.md check-week1*.mjs
 rm -rf api/scripts/check-project.mjs api/data/initialRequests.json \
        frontend/public/data frontend/src/services/requestStorage.js
 
-# ④ ไฟล์ .env ของเครื่องตัวเอง
+# ④ ไฟล์ .env ของเครื่องตัวเอง (macOS มี openssl ติดมากับ system)
 cp api/.env.example api/.env
 echo "JWT_SECRET=$(openssl rand -hex 32)" >> api/.env
 
 # ⑤ แทน README
+mv README.md README.md.lab13-backup 2>/dev/null
 cp PROJECT_README_TEMPLATE.md README.md
 
 # ⑥ กรอก config
 cp project.config.example.json project.config.json
 ```
+
+### ⚠ กรณีที่คุณมี `starter/` อยู่ใน repo แล้ว (จาก commit M1.2–M1.4)
+
+ถ้า repo ทีมมี `starter/` ที่คัดลอก LAB 13 มาแล้ว (เป็น case ปัจจุบันของเรา) · **ข้ามข้อ ①** · เลื่อนของจาก `starter/` ขึ้น root แทน:
+
+```zsh
+# zsh — ใช้ glob qualifier (D) เพื่อรวม dotfiles · ไม่ต้องใช้ shopt (ของ bash)
+cd ~/engse203-final-2-T-07
+mv starter/*(D) ./
+rmdir starter
+
+# ถ้า zsh ตอบ "no matches found" → ใช้ expansion สองรอบ
+# mv starter/* ./ 2>/dev/null
+# mv starter/.[!.]* ./ 2>/dev/null
+# rmdir starter
+
+# แล้วไปทำข้อ ② ③ ④ ⑤ ⑥ ต่อเหมือนเดิม
+```
+
+> `starter/*(D)` คือ zsh glob · `(D)` qualifier = include dotfiles · bash ใช้ `shopt -s dotglob; mv starter/* ./` แทน · ทั้งคู่ให้ผลเดียวกัน
 
 ## M1-C2 · แก้ `package.json` ที่ root
 

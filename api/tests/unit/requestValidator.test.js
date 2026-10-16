@@ -75,3 +75,35 @@ describe('isValidStatus', () => {
     expect(isValidStatus(s)).toBe(false);
   });
 });
+
+describe('validateRequestInput — ค่าขอบสูงสุด (CP48)', () => {
+  test('ชื่อผู้แจ้ง 100 ตัว → ผ่าน', () => {
+    expect(validateRequestInput({
+      requesterName: 'ก'.repeat(100), requestType: 'แจ้งซ่อม',
+      location: 'ห้อง 301', details: 'รายละเอียดยาวพอ', priority: 'normal',
+    })).toEqual([]);
+  });
+  test('ชื่อผู้แจ้ง 101 ตัว → error', () => {
+    expect(validateRequestInput({
+      requesterName: 'ก'.repeat(101), requestType: 'แจ้งซ่อม',
+      location: 'ห้อง 301', details: 'รายละเอียดยาวพอ', priority: 'normal',
+    })).toHaveLength(1);
+  });
+  test('รายละเอียด 1000 ตัว → ผ่าน · 1001 ตัว → error', () => {
+    const base = { requesterName: 'สมชาย ใจดี', requestType: 'แจ้งซ่อม', location: 'ห้อง 301', priority: 'normal' };
+    expect(validateRequestInput({ ...base, details: 'x'.repeat(1000) })).toEqual([]);
+    expect(validateRequestInput({ ...base, details: 'x'.repeat(1001) })).toHaveLength(1);
+  });
+  test('สถานที่ 101 ตัว → error', () => {
+    expect(validateRequestInput({
+      requesterName: 'สมชาย ใจดี', requestType: 'แจ้งซ่อม',
+      location: 'ก'.repeat(101), details: 'รายละเอียดยาวพอ', priority: 'normal',
+    })).toHaveLength(1);
+  });
+  test('ชนิดข้อมูลไม่ใช่ string → error "ต้องเป็นข้อความ"', () => {
+    expect(validateRequestInput({
+      requesterName: 123, requestType: 'แจ้งซ่อม',
+      location: 'ห้อง 301', details: 'รายละเอียดยาวพอ', priority: 'normal',
+    })).toContainEqual(expect.stringContaining('ต้องเป็นข้อความ'));
+  });
+});
