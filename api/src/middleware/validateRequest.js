@@ -1,8 +1,8 @@
-import { validateRequestInput } from '../validators/requestValidator.js';
+import { validateRequestInput } from '../validators/loanValidator.js';
 
 /**
  * middleware บาง ๆ — เรียก pure function แล้วตัดสินว่าจะไปต่อหรือตอบ 400
- * กฎทั้งหมดอยู่ใน validators/requestValidator.js (ทดสอบแยกได้ด้วย unit test)
+ * กฎทั้งหมดอยู่ใน validators/loanValidator.js (ทดสอบแยกได้ด้วย unit test)
  */
 export function validateRequest(req, res, next) {
   const errors = validateRequestInput(req.body);

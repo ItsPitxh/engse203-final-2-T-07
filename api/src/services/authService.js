@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
-import { findUserByEmail } from './requestService.js';
+import { findUserByEmail } from './loanService.js';
 import { verifyPassword } from '../utils/password.js';
 
 /**

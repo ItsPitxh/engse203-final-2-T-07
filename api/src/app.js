@@ -4,7 +4,8 @@ import morgan from 'morgan';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { config } from './config.js';
-import requestRoutes from './routes/requestRoutes.js';
+import loanRoutes from './routes/loanRoutes.js';
+import equipmentRoutes from './routes/equipmentRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
@@ -36,7 +37,8 @@ export function createApp() {
   });
   app.use('/api/health', healthRoutes);
   app.use('/api/auth', authRoutes);
-  app.use('/api/requests', requestRoutes);
+  app.use('/api/loans', loanRoutes);
+  app.use('/api/equipment', equipmentRoutes);
   app.use('/api/users', userRoutes);
 
   // ⑤ หน้าแรก — ขึ้นกับสภาพแวดล้อม

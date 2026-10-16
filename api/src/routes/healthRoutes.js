@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDbStatus } from '../services/requestService.js';
+import { getDbStatus } from '../services/loanService.js';
 import { config } from '../config.js';
 
 /**

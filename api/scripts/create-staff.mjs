@@ -6,9 +6,9 @@
  *   npm run create-staff -- somsak@rmutl.ac.th "Str0ng-Pass!" "สมศักดิ์ ใจเย็น"
  *
  * ใช้ hashPassword ตัวเดียวกับระบบ — ฐานข้อมูลเก็บแค่ hash
- * ทำงานผ่าน service จึงใช้ได้ทั้ง campus.db และ Turso (ถ้าตั้งค่า TURSO_* ไว้)
+ * ทำงานผ่าน service จึงใช้ได้ทั้ง loans.db และ Turso (ถ้าตั้งค่า TURSO_* ไว้)
  */
-import { loadSeed, upsertStaff } from '../src/services/requestService.js';
+import { loadSeed, upsertStaff } from '../src/services/loanService.js';
 import { hashPassword } from '../src/utils/password.js';
 
 const [email, password, name = 'เจ้าหน้าที่'] = process.argv.slice(2);

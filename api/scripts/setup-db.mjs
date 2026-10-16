@@ -3,12 +3,12 @@
  * setup-db.mjs — สร้างฐานข้อมูลจาก schema.sql
  *
  * ใช้เมื่อ
- *   · ยังไม่มีไฟล์ campus.db (เครื่องใหม่ หรือเพิ่ง clone มา)
+ *   · ยังไม่มีไฟล์ loans.db (เครื่องใหม่ หรือเพิ่ง clone มา)
  *   · ข้อมูลเสียหาย อยากเริ่มใหม่จากข้อมูลตั้งต้น
  *   · ต้องการฐานข้อมูลแยกสำหรับทดสอบ
  *
  * วิธีใช้
- *   npm run db:setup            สร้าง api/data/campus.db
+ *   npm run db:setup            สร้าง api/data/loans.db
  *   npm run db:setup -- --force ลบของเดิมแล้วสร้างใหม่
  *   DB_FILE=./data/test.db npm run db:setup    สร้างที่อื่น
  */
@@ -22,7 +22,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const API_ROOT = path.resolve(HERE, '..');
 const DB_FILE = process.env.DB_FILE
   ? path.resolve(process.cwd(), process.env.DB_FILE)
-  : path.join(API_ROOT, 'data', 'campus.db');
+  : path.join(API_ROOT, 'data', 'loans.db');
 const SCHEMA_FILE = path.join(API_ROOT, 'data', 'schema.sql');
 const FORCE = process.argv.includes('--force');
 
@@ -74,8 +74,8 @@ for (const t of tables) {
 console.log('');
 
 // ตรวจว่า Foreign Key ถูกตั้งไว้จริง
-const fk = db.prepare('PRAGMA foreign_key_list(requests)').all();
+const fk = db.prepare('PRAGMA foreign_key_list(loans)').all();
 console.log(fk.length
-  ? `  ✓ Foreign Key: requests.${fk[0].from} → ${fk[0].table}.${fk[0].to}`
-  : '  ⚠ ไม่พบ Foreign Key ใน requests — ตรวจ schema.sql');
+  ? `  ✓ Foreign Key: loans.${fk[0].from} → ${fk[0].table}.${fk[0].to}`
+  : '  ⚠ ไม่พบ Foreign Key ใน loans — ตรวจ schema.sql');
 console.log('');

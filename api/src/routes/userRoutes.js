@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as service from '../services/requestService.js';
+import * as service from '../services/loanService.js';
 
 // ⭐ endpoint สำหรับดูผู้ใช้และคำร้องของแต่ละคน
 // ใช้ฐานข้อมูลผ่าน service เหมือน route อื่น — ไม่เปิด connection เอง
@@ -10,8 +10,8 @@ router.get('/', (req, res) => {
   res.json(service.listUsers());
 });
 
-router.get('/:id/requests', (req, res) => {
-  res.json(service.listRequestsByUser(Number(req.params.id)));
+router.get('/:id/loans', (req, res) => {
+  res.json(service.listLoansByUser(Number(req.params.id)));
 });
 
 export default router;
