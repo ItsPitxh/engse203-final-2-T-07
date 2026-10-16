@@ -1,54 +1,42 @@
-export const MIN_NAME = 2;
-export const MAX_NAME = 100;
-export const MIN_PURPOSE = 10;
-export const MAX_PURPOSE = 500;
-export const MIN_QTY = 1;
-export const MAX_QTY = 10;
-export const MAX_DAYS = 14;
+import { test } from 'vitest';
+import assert from 'node:assert/strict';
+import { validateLoanForm } from './loanForm.js';
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const equipment = [{ id: 'EQ-1', name: 'กล้อง', availableQty: 3, totalQty: 5 }];
+const valid = {
+  borrowerName: 'สมชาย ใจดี',
+  equipmentId: 'EQ-1',
+  quantity: 2,
+  borrowDate: '2026-10-20',
+  returnDate: '2026-10-25',
+  purpose: 'ถ่ายภาพกิจกรรมชมรม',
+};
 
-function daysBetween(fromISO, toISO) {
-  const from = new Date(fromISO + 'T00:00:00');
-  const to = new Date(toISO + 'T00:00:00');
-  return Math.round((to - from) / 86_400_000);
-}
+test('validateLoanForm ข้อมูลถูกต้อง → ไม่มี error', () => {
+  assert.deepEqual(validateLoanForm(valid, equipment), []);
+});
 
-export function validateLoanForm(values, equipment = []) {
-  const v = values ?? {};
-  const errors = [];
+test('validateLoanForm คืนครบ 14 วัน → ผ่าน (ค่าขอบ)', () => {
+  assert.deepEqual(validateLoanForm({ ...valid, returnDate: '2026-11-03' }, equipment), []);
+});
 
-  const name = typeof v.borrowerName === 'string' ? v.borrowerName.trim() : '';
-  if (name.length < MIN_NAME || name.length > MAX_NAME) {
-    errors.push(`ชื่อผู้ยืมต้องยาว ${MIN_NAME}–${MAX_NAME} ตัวอักษร`);
-  }
+test('validateLoanForm คืนเกิน 14 วัน → error', () => {
+  const errors = validateLoanForm({ ...valid, returnDate: '2026-11-04' }, equipment);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /14 วัน/);
+});
 
-  if (!v.equipmentId) errors.push('ต้องเลือกอุปกรณ์');
+test('validateLoanForm วันคืน = วันยืม → error', () => {
+  const errors = validateLoanForm({ ...valid, returnDate: '2026-10-20' }, equipment);
+  assert.ok(errors.some(e => e.includes('หลังวันยืม')));
+});
 
-  const qty = Number(v.quantity);
-  if (!Number.isInteger(qty) || qty < MIN_QTY || qty > MAX_QTY) {
-    errors.push(`จำนวนต้องเป็นจำนวนเต็ม ${MIN_QTY}–${MAX_QTY}`);
-  } else {
-    const eq = equipment.find(e => e.id === v.equipmentId);
-    if (eq && qty > eq.availableQty) {
-      errors.push(`จำนวนเกินคงเหลือ (เหลือ ${eq.availableQty} ชิ้น)`);
-    }
-  }
+test('validateLoanForm จำนวนเกิน availableQty → error', () => {
+  const errors = validateLoanForm({ ...valid, quantity: 4 }, equipment);
+  assert.ok(errors.some(e => e.includes('เกินคงเหลือ')));
+});
 
-  const borrowOk = DATE_RE.test(v.borrowDate ?? '');
-  const returnOk = DATE_RE.test(v.returnDate ?? '');
-  if (!borrowOk) errors.push('รูปแบบวันยืมต้องเป็น YYYY-MM-DD');
-  if (!returnOk) errors.push('รูปแบบวันคืนต้องเป็น YYYY-MM-DD');
-  if (borrowOk && returnOk) {
-    const d = daysBetween(v.borrowDate, v.returnDate);
-    if (d <= 0) errors.push('วันคืนต้องหลังวันยืม');
-    else if (d > MAX_DAYS) errors.push(`วันคืนต้องไม่เกิน ${MAX_DAYS} วันจากวันยืม`);
-  }
-
-  const purpose = typeof v.purpose === 'string' ? v.purpose.trim() : '';
-  if (purpose.length < MIN_PURPOSE || purpose.length > MAX_PURPOSE) {
-    errors.push(`วัตถุประสงค์ต้องยาว ${MIN_PURPOSE}–${MAX_PURPOSE} ตัวอักษร`);
-  }
-
-  return errors;
-}
+test('validateLoanForm วัตถุประสงค์ 9 ตัว → error · 10 ตัว → ผ่าน', () => {
+  assert.ok(validateLoanForm({ ...valid, purpose: '123456789' }, equipment).length > 0);
+  assert.deepEqual(validateLoanForm({ ...valid, purpose: '1234567890' }, equipment), []);
+});
