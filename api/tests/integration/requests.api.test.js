@@ -6,17 +6,15 @@ import { loginAsStaff } from '../helpers/auth.js';
 
 /**
  * Integration test — ยิง HTTP จริงผ่านทุกชั้น: route → controller → service → SQLite
- * beforeEach เรียก loadSeed() ใหม่ทุกข้อ → ได้ฐานข้อมูลในหน่วยความจำชุดใหม่ (5 รายการ)
- * test ข้อหนึ่งลบหรือเพิ่มข้อมูล จึงไม่กระทบข้ออื่น
+ * Week 13: PUT และ DELETE ต้องแนบ token ของเจ้าหน้าที่
  */
 
 const app = createApp();
-let staffToken;
+let staffAuth;
 beforeEach(async () => {
   await loadSeed();
-  staffToken = await loginAsStaff(app);
+  staffAuth = { Authorization: `Bearer ${await loginAsStaff(app)}` };
 });
-const authed = (req) => req.set('Authorization', `Bearer ${staffToken}`);
 
 const valid = {
   requesterName: 'ทดสอบ อัตโนมัติ', requestType: 'แจ้งซ่อม',
@@ -58,7 +56,7 @@ describe('GET /api/requests/:id', () => {
   });
 });
 
-describe('POST /api/requests', () => {
+describe('POST /api/requests (เปิดสาธารณะ — ไม่ต้องเข้าสู่ระบบ)', () => {
   test('ข้อมูลถูกต้อง → 201 · ได้รหัสถัดไป', async () => {
     const r = await request(app).post('/api/requests').send(valid);
     expect(r.status).toBe(201);
@@ -70,9 +68,9 @@ describe('POST /api/requests', () => {
     expect(r.status).toBe(400);
     expect(Array.isArray(r.body.details)).toBe(true);
   });
-  // 🐞 regression test — BUG #1: ลบแล้วเพิ่มใหม่ ได้ 500 (รหัสซ้ำ)
-  test('ลบรายการกลาง แล้วเพิ่มใหม่ → 201 และรหัสไม่ซ้ำของเดิม', async () => {
-    await authed(request(app).delete('/api/requests/REQ-002')).expect(204);
+  // 🐞 regression test — BUG #1
+  test('ลบรายการกลาง (เจ้าหน้าที่) แล้วเพิ่มใหม่ → 201 และรหัสไม่ซ้ำของเดิม', async () => {
+    await request(app).delete('/api/requests/REQ-002').set(staffAuth).expect(204);
     const r = await request(app).post('/api/requests').send(valid);
     expect(r.status).toBe(201);
     const ids = (await request(app).get('/api/requests')).body.map((x) => x.id);
@@ -80,30 +78,38 @@ describe('POST /api/requests', () => {
   });
 });
 
-describe('PUT /api/requests/:id', () => {
-  test('เปลี่ยนสถานะ → 200 และค่าใหม่ถูกบันทึก', async () => {
-    const r = await authed(request(app).put('/api/requests/REQ-001')).send({ status: 'completed' });
+describe('PUT /api/requests/:id (ต้องเป็นเจ้าหน้าที่)', () => {
+  test('เจ้าหน้าที่เปลี่ยนสถานะ → 200 และค่าใหม่ถูกบันทึก', async () => {
+    const r = await request(app).put('/api/requests/REQ-001').set(staffAuth).send({ status: 'completed' });
     expect(r.status).toBe(200);
     expect(r.body.status).toBe('completed');
   });
-  test('สถานะนอกรายการ → 400', async () => {
-    const r = await authed(request(app).put('/api/requests/REQ-001')).send({ status: 'done' });
+  test('เจ้าหน้าที่ส่งสถานะนอกรายการ → 400', async () => {
+    const r = await request(app).put('/api/requests/REQ-001').set(staffAuth).send({ status: 'done' });
     expect(r.status).toBe(400);
   });
-  // 🐞 regression test — BUG #3: เปลี่ยนสถานะคำร้องที่ไม่มีอยู่ ได้ 500
-  test('คำร้องที่ไม่มีอยู่ → 404 (ไม่ใช่ 500)', async () => {
-    const r = await authed(request(app).put('/api/requests/REQ-999')).send({ status: 'completed' });
+  // 🐞 regression test — BUG #3
+  test('เจ้าหน้าที่เปลี่ยนสถานะคำร้องที่ไม่มีอยู่ → 404 (ไม่ใช่ 500)', async () => {
+    const r = await request(app).put('/api/requests/REQ-999').set(staffAuth).send({ status: 'completed' });
     expect(r.status).toBe(404);
+  });
+  test('ไม่มี token → 401', async () => {
+    const r = await request(app).put('/api/requests/REQ-001').send({ status: 'completed' });
+    expect(r.status).toBe(401);
   });
 });
 
-describe('DELETE /api/requests/:id', () => {
-  test('ลบแล้ว GET ซ้ำ → 404', async () => {
-    await authed(request(app).delete('/api/requests/REQ-003')).expect(204);
+describe('DELETE /api/requests/:id (ต้องเป็นเจ้าหน้าที่)', () => {
+  test('เจ้าหน้าที่ลบแล้ว GET ซ้ำ → 404', async () => {
+    await request(app).delete('/api/requests/REQ-003').set(staffAuth).expect(204);
     await request(app).get('/api/requests/REQ-003').expect(404);
   });
-  test('ลบรายการที่ไม่มี → 404', async () => {
-    await authed(request(app).delete('/api/requests/REQ-999')).expect(404);
+  test('เจ้าหน้าที่ลบรายการที่ไม่มี → 404', async () => {
+    await request(app).delete('/api/requests/REQ-999').set(staffAuth).expect(404);
+  });
+  test('ไม่มี token → 401', async () => {
+    const r = await request(app).delete('/api/requests/REQ-001');
+    expect(r.status).toBe(401);
   });
 });
 
@@ -115,25 +121,27 @@ describe('GET /api/health และ /api/users', () => {
   });
   test('/api/users ใช้ฐานข้อมูลชุดเดียวกับ service', async () => {
     const r = await request(app).get('/api/users');
-    expect(r.body).toHaveLength(5);   // 4 ผู้แจ้ง + เจ้าหน้าที่ 1 (schema สัปดาห์ 13)
+    expect(r.body).toHaveLength(5);   // 4 ผู้แจ้ง + staff 1
     expect(r.body[0]).not.toHaveProperty('email');
   });
 });
 
-describe('เส้นทางที่ไม่มีอยู่', () => {
-  // เพิ่มหลังเปิด coverage report (CP46) — errorHandler.js ยังไม่มี test ไหนวิ่งผ่าน
+describe('เส้นทางและข้อมูลที่ไม่ถูกต้อง', () => {
   test('GET /api/nope → 404 เป็น JSON', async () => {
     const r = await request(app).get('/api/nope');
     expect(r.status).toBe(404);
     expect(r.body.error).toMatch(/ไม่พบเส้นทาง/);
   });
-});
-
-describe('ข้อมูลผิดรูปแบบและ endpoint ผู้ใช้', () => {
   test('ส่ง JSON ที่เสีย → 400 เป็น JSON ไม่ใช่ 500', async () => {
     const r = await request(app).post('/api/requests')
       .set('Content-Type', 'application/json').send('{"requesterName": ');
     expect(r.status).toBe(400);
+    expect(r.body).toHaveProperty('error');
+  });
+  test('body ใหญ่เกิน 10kb → 413 เป็น JSON', async () => {
+    const bigBody = { ...valid, details: 'x'.repeat(20000) };
+    const r = await request(app).post('/api/requests').send(bigBody);
+    expect(r.status).toBe(413);
     expect(r.body).toHaveProperty('error');
   });
   test('GET /api/users/1/requests → คำร้องของผู้ใช้คนนั้น', async () => {

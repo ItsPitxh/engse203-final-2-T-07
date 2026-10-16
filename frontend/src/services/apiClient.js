@@ -4,6 +4,20 @@
  */
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001';
+const TOKEN_KEY = 'campus-service-token';
+
+/** จัดการ token ใน localStorage — ให้หน้า login บันทึก, หน้าอื่น ๆ เรียกใช้ */
+export const auth = {
+  getToken() {
+    try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+  },
+  setToken(token) {
+    try { localStorage.setItem(TOKEN_KEY, token); } catch { /* ignore */ }
+  },
+  clearToken() {
+    try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+  },
+};
 
 /** error ที่รู้ว่ามาจาก API พร้อม status ที่ได้กลับมา */
 export class ApiError extends Error {
@@ -25,19 +39,23 @@ async function parseError(response) {
 
 /**
  * เรียก API แล้วคืนข้อมูลที่ parse แล้ว
- * - ตอบ 2xx → คืนข้อมูล (204 คืน null เพราะไม่มี body)
+ * - แนบ Authorization: Bearer <token> ถ้ามี token เก็บไว้
+ * - ตอบ 2xx → คืนข้อมูล (204 คืน null)
  * - ตอบ 4xx/5xx → โยน ApiError พร้อม status
  * - ต่อ API ไม่ได้เลย → โยน ApiError status 0
  */
 export async function apiFetch(path, options = {}) {
+  const token = auth.getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
   let response;
   try {
-    response = await fetch(`${BASE_URL}${path}`, {
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-      ...options,
-    });
+    response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   } catch {
-    // fetch โยน error เมื่อต่อเซิร์ฟเวอร์ไม่ได้เลย เช่น API ไม่ได้เปิด
     throw new ApiError('ติดต่อเซิร์ฟเวอร์ไม่ได้ — ตรวจว่าเปิด API ที่พอร์ต 3001 แล้วหรือยัง', 0);
   }
 

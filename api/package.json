@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "node --disable-warning=ExperimentalWarning --watch --env-file=.env src/server.js",
     "start": "node --disable-warning=ExperimentalWarning src/server.js",
-    "check": "node scripts/check-project.mjs",
+    "check": "node --disable-warning=ExperimentalWarning check-project.mjs",
     "test": "vitest run",
     "db:setup": "node --disable-warning=ExperimentalWarning scripts/setup-db.mjs",
     "db:reset": "node --disable-warning=ExperimentalWarning scripts/setup-db.mjs --force",

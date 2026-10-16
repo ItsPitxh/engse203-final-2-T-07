@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "check": "node scripts/check-project.mjs",
+    "check": "node --disable-warning=ExperimentalWarning check-project.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "verify": "npm run check && npm run build",
