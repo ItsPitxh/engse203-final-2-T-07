@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as controller from '../controllers/requestController.js';
 import { validateRequest } from '../middleware/validateRequest.js';
+import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -8,9 +9,9 @@ const router = Router();
 router.get('/', controller.listRequests);
 router.post('/', validateRequest, controller.createRequest);
 router.get('/:id', controller.getRequest);
-// 🏫 TODO W13-AUTH (CP51): เปลี่ยนสถานะและลบ ได้เฉพาะเจ้าหน้าที่
-//   router.put('/:id', authenticate, requireRole('staff'), controller.updateRequestStatus);
-router.put('/:id', controller.updateRequestStatus);
-router.delete('/:id', controller.deleteRequest);
+
+// Week 13 · CP51 — เปลี่ยนสถานะและลบคำร้อง ได้เฉพาะเจ้าหน้าที่
+router.put('/:id', authenticate, requireRole('staff'), controller.updateRequestStatus);
+router.delete('/:id', authenticate, requireRole('staff'), controller.deleteRequest);
 
 export default router;
